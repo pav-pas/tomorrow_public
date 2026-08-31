@@ -1,3 +1,3 @@
 #!/bin/sh
 
-find . -type f -name "*.sh" | sed 's|.*/||' | sed 's/\.sh$//' | sort -r
+find . -type f -name "*.sh" | rev | cut -d/ -f1 | cut -d. -f2- | rev | sort -r
