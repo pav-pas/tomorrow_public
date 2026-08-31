@@ -7,6 +7,11 @@ if [ -z "$HERO_ID" ]; then
     exit 1
 fi
 
-curl -fsSL https://01.tomorrow-school.ai/assets/superhero/all.json \
-    | jq -r --argjson id "$HERO_ID" '.[] | select(.id == $id) | .connections.relatives' \
-    | tr -d '"'
+curl -fsSL https://01.tomorrow-school.ai/assets/superhero/all.json |
+jq -r --argjson id "$HERO_ID" '
+    .[]
+    | select(.id == $id)
+    | .connections.relatives
+    | gsub("\n"; "\\n")
+' |
+tr -d '"'
