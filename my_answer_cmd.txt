@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Ручная цепочка расследования (now-get-to-work)
+# Запускать из корня проекта: bash my_answer_cmd.sh
+# Или заходить в mystery и копировать команды по одной.
+
+cd "$(dirname "$0")/mystery" || exit 1
+
+echo "========== ШАГ 1: улики на месте преступления =========="
+# hint2: настоящие улики помечены словом CLUE
+grep "CLUE" crimescene
+# Найдено:
+# 1) убийца — высокий мужчина, рост минимум 6'
+# 2) в кошельке карты: AAA, Delta SkyMiles, local library, Museum of Bash History
+# 3) свидетельница из кафе — Annabel (блондинка, акцент NZ)
+
+echo ""
+echo "========== ШАГ 2: ищем Annabel в базе людей =========="
+# hint4: grep Annabel people
+grep "Annabel" people
+# Найдено 4 человека:
+# Annabel Sun        F  Hart Place, line 40
+# Oluwasegun Annabel M  Mattapan Street, line 173   ← мужчина, не свидетельница
+# Annabel Church     F  Buckingham Place, line 179
+# Annabel Fuglsang   M  Haley Street, line 176      ← мужчина, не свидетельница
+# Дальше проверяем только женщин (F)
+
+echo ""
+echo "========== ШАГ 3: читаем строки улиц (hint5: head | tail) =========="
+echo "--- Hart Place, line 40 (Annabel Sun) ---"
+head -n 40 streets/Hart_Place | tail -n 1
+# -> SEE INTERVIEW #47246024
+# В интервью: brown hair, not from NZ → НЕ та свидетельница
+
+echo "--- Buckingham Place, line 179 (Annabel Church) ---"
+head -n 179 streets/Buckingham_Place | tail -n 1
+# -> SEE INTERVIEW #699607  ← ключевое интервью
+
+echo ""
+echo "========== ШАГ 4: читаем ключевое интервью =========="
+cat interviews/interview-699607
+# Найдено описание машины убийцы:
+# синий Honda, номер начинается с L337, заканчивается на 9
+
+echo ""
+echo "========== ШАГ 5: ищем подходящие машины (hint6-7) =========="
+# grep -A 5 показывает строки ПОСЛЕ совпадения (структура vehicles: Plate/Make/Color/Owner/Height)
+grep -A 5 "L337" vehicles \
+  | grep -B 1 -A 4 "Honda" \
+  | grep -B 2 -A 3 "Blue" \
+  | grep -B 4 -A 1 "6'"
+# Кандидаты (синий Honda, L337...9, рост >= 6'):
+# Erika Owens
+# Joe Germuska
+# Dartey Henv
+# Hellen Maher
+
+echo ""
+echo "========== ШАГ 6: проверяем членства (hint8) =========="
+# Библиотека в данных называется Terminal_City_Library
+# Нужно состоять во ВСЕХ 4 клубах из кошелька → grep -c должно дать 4
+
+echo -n "Erika Owens: "
+cat memberships/AAA memberships/Delta_SkyMiles memberships/Terminal_City_Library memberships/Museum_of_Bash_History | grep -c "Erika Owens"
+# 0 — отпадает
+
+echo -n "Joe Germuska: "
+cat memberships/AAA memberships/Delta_SkyMiles memberships/Terminal_City_Library memberships/Museum_of_Bash_History | grep -c "Joe Germuska"
+# 2 — отпадает
+
+echo -n "Dartey Henv: "
+cat memberships/AAA memberships/Delta_SkyMiles memberships/Terminal_City_Library memberships/Museum_of_Bash_History | grep -c "Dartey Henv"
+# 4 — подходит
+
+echo -n "Hellen Maher: "
+cat memberships/AAA memberships/Delta_SkyMiles memberships/Terminal_City_Library memberships/Museum_of_Bash_History | grep -c "Hellen Maher"
+# 4 — тоже подходит, нужна доп. проверка
+
+echo ""
+echo "========== ШАГ 7: снимаем невиновных =========="
+# Hellen Maher нет в people целиком, но в интервью есть по фамилии:
+grep -r "Maher" interviews/ | grep -i "not considered"
+# -> interview-904020: "Maher is not considered a suspect."
+# Значит Hellen Maher НЕ убийца
+
+echo ""
+echo "========== ИТОГ =========="
+echo "Dartey Henv"
+# Единственный, кто:
+# - подходит по машине (синий Honda, L337...9, рост 6'+)
+# - состоит во всех 4 клубах
+# - не снят с подозрений в интервью
