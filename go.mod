@@ -1,4 +1,4 @@
-module github.com/01-edu/piscinego
+module piscine
 
 go 1.26.4
 
